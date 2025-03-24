@@ -7,7 +7,7 @@ import numpy as np
 
 
 #from scipy.cluster.hierarchy import dendrogram, linkage
-def show_silhouette_score_clustering(labels, coordinates, names):
+def sil_score(labels, coordinates, names):
     n_clusters = len(set(labels))  # the number of clusters
     fig, axs = plt.subplots(figsize=(8, 8), nrows=1, ncols=1)
 
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     mds_coordinates = algorithm.mds_scaling(distance_matrix)
 
     # show clustered result
-    show_silhouette_score_clustering(agglo_clustering_labels, mds_coordinates, student_names)
+    silhouette_score(agglo_clustering_labels, mds_coordinates, student_names)
     print(student_names)
 
 

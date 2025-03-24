@@ -2,11 +2,9 @@ import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.manifold import MDS
 from sklearn.metrics.pairwise import cosine_similarity
-
 from vector import load_from_json
-
-import show_clustering
-import clustering_silhouette_score
+import show_clustering as sc
+from show_silhouette_score import sil_score
 
 
 # Similarity Calculation
@@ -85,9 +83,9 @@ if __name__ == "__main__":
     ).fit_predict(mds_coordinates)
     print_clusters(students, labels)
     print("\n군집화 label:", labels, "\n")
-    show_clustering.scatter_clustering(student_names, labels, mds_coordinates)
-    show_clustering.dendrogram_clustering(student_names, distance_matrix)
-    clustering_silhouette_score.show_silhouette_score_clustering(labels, mds_coordinates, student_names)
+    sc.scatter_clustering(student_names, labels, mds_coordinates)
+    sc.dendrogram_clustering(student_names, distance_matrix)
+    sil_score(labels, mds_coordinates, student_names)
 
 
     # 군집화 이후 스케일링
@@ -97,9 +95,9 @@ if __name__ == "__main__":
     mds_coordinates = mds_scaling(distance_matrix)
     print_clusters(students, labels1)
     print("\n군집화 label:", labels1, "\n")
-    show_clustering.scatter_clustering(student_names, labels1, mds_coordinates)
-    show_clustering.dendrogram_clustering(student_names, distance_matrix)
-    clustering_silhouette_score.show_silhouette_score_clustering(labels1, mds_coordinates, student_names)
+    sc.scatter_clustering(student_names, labels1, mds_coordinates)
+    sc.dendrogram_clustering(student_names, distance_matrix)
+    sil_score(labels1, mds_coordinates, student_names)
 
     """
     mds scaling 이후에는 각 학생 별 x, y 좌표가 존재, (학생수 x 2)의 dimension
