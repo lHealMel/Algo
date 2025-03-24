@@ -5,6 +5,9 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from vector import load_from_json
 
+import show_clustering
+import clustering_silhouette_score
+
 
 # Similarity Calculation
 def calculate_similarity_matrix(vectors):
@@ -60,24 +63,46 @@ def mds_scaling(matrix):
 
 if __name__ == "__main__":
     students = load_from_json("students_data.json") # load json
+    student_names = [student['name'] for student in students]
 
     # Student vector extraction / Calculate the Similarity Matrix
     student_vectors = [student["vector"] for student in students]
     similarity_matrix = calculate_similarity_matrix(student_vectors)
-
     print_similarity_matrix(students, similarity_matrix)
 
     # Converting to distance matrix
     distance_matrix = 1 - similarity_matrix
 
+
+    # 스케일링 이후 군집화
+    print("\nClustering After Scaling")
     mds_coordinates = mds_scaling(distance_matrix)
-    labels = AgglomerativeClustering().fit_predict(mds_coordinates)
-    print(labels)
+    print("스케일링 이후 좌표 :\n",mds_coordinates)
+    labels = AgglomerativeClustering(
+        n_clusters=None,  # Automatically determine the number of clusters
+        distance_threshold=0.7,  # Set similarity threshold (1 - threshold = distance)
+        linkage="complete"  # Calculate the distances between clusters: complete Linkage
+    ).fit_predict(mds_coordinates)
     print_clusters(students, labels)
+    print("\n군집화 label:", labels, "\n")
+    show_clustering.scatter_clustering(student_names, labels, mds_coordinates)
+    show_clustering.dendrogram_clustering(student_names, distance_matrix)
+    clustering_silhouette_score.show_silhouette_score_clustering(labels, mds_coordinates, student_names)
 
 
+    # 군집화 이후 스케일링
+    print("Scaling After Clustering")
     labels1 = agglomerative_clustering().fit_predict(distance_matrix)
-    print(labels1)
+    print("거리 matrix:\n", distance_matrix)
     mds_coordinates = mds_scaling(distance_matrix)
     print_clusters(students, labels1)
+    print("\n군집화 label:", labels1, "\n")
+    show_clustering.scatter_clustering(student_names, labels1, mds_coordinates)
+    show_clustering.dendrogram_clustering(student_names, distance_matrix)
+    clustering_silhouette_score.show_silhouette_score_clustering(labels1, mds_coordinates, student_names)
 
+    """
+    mds scaling 이후에는 각 학생 별 x, y 좌표가 존재, (학생수 x 2)의 dimension
+    
+    이전에는 학생수 간의 거리 벡터로 존재. (학생수 x 학생수) 의 dimension
+    """
