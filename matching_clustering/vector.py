@@ -1,4 +1,7 @@
 import json
+import tensorflow.keras
+
+#one hot encoding을 keras로 처리하도록 변경하기
 
 # Define a function to convert binary/categorical data into vectors
 def process_binary(value, categories):

@@ -12,6 +12,7 @@ def show_distance_matrix(names, coordinates):
     # Marking dots
     plt.scatter(coordinates[:, 0], coordinates[:, 1], color='blue')
 
+
     # Map the student name for each point
     for i, name in enumerate(names):
         plt.text(coordinates[i, 0], coordinates[i, 1], name, fontsize=10, ha='right')
