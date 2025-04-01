@@ -1,33 +1,28 @@
-import numpy as np
+#202135835 정지호
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from nltk.tokenize import word_tokenize
-from nltk.corpus import stopwords
+import featuretools as ft
 
-# return (-1, col) shaped np array
-def col_based_array(col, tmp_list):
-  list_len = len(tmp_list)
-  if list_len % col != 0:
-    for i in range(col - (list_len%col)):
-      tmp_list.append(np.nan)
-  arr_result = np.array(tmp_list).reshape(-1, 6)
-  return arr_result
+# set to see all columns
+pd.set_option('display.max_rows', None)
+pd.set_option('display.width', None)
 
-str1 = """Dear Sir, SEEKING YOUR IMMEDIATE ASSISTANCE. Please permit 
-me to make your acquaintance in so informal a manner. My name 
-is. DAN PATRICK of the Democratic Republic of Congo and One of 
-the close aides to the former President of the Democratic Republic 
-of Congo LAURENT KABILA of blessed memory, may his soul rest in 
-peace."""
+clients = pd.read_csv('data/clients.csv', parse_dates=['joined'])
+loans = pd.read_csv('data/loans.csv', parse_dates=['loan_start', 'loan_end'])
+payments = pd.read_csv('data/payments.csv', parse_dates=['payment_date'])
 
-str1_token = word_tokenize(str1)
-stop_words = set(stopwords.words('english'))
+# declare empty entityset
+es = ft.EntitySet(id='clients')
 
-result = []
-for word in str1_token:
-    if word not in stop_words and len(word)>2: # remove stop words and words len < 2
-        result.append(word.lower())
+# .entity_from_dataframe,  had been changed
+es = es.add_dataframe(dataframe_name='clients', dataframe=clients, index='client_id', time_index='joined')
+es = es.add_dataframe(dataframe_name='loans', dataframe=loans, logical_types={'repaid': "Categorical"}, index='loan_id')
+es = es.add_dataframe(dataframe_name='payments', dataframe=payments, logical_types={'missed': "Categorical"}, make_index=True, index='payment_id')
 
-shaped_result = col_based_array(6, result)
-print('After tokenization, lowercase remove stopwords, shortwords:\n',shaped_result, '\n', shaped_result.shape)
+stats = loans.groupby('client_id')['loan_amount'].agg(['sum'])
+stats.columns = ['total_loan_amount']
+
+# Merge with the clients dataframe
+stats_add_total = clients.merge(stats, left_on='client_id', right_index=True, how='left')
+
+print(stats.head(10))
+print(stats_add_total.head(10))

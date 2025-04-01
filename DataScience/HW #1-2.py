@@ -12,7 +12,7 @@ df.columns = ['A', 'B', 'C', 'D']
 print('Original DataFrame\n',df, '\n', df1)
 
 #  Replace any non-numeric value with NaN.
-df = df.replace(to_replace='[^a-zA-z0-9\.]', value = np.    nan, regex=True)
+df = df.replace(to_replace='[^a-zA-z0-9\.]', value = np.nan, regex=True)
 
 # Replace all columns type into float.
 df = df.astype(float)
