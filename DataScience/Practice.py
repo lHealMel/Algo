@@ -6,6 +6,7 @@ import featuretools as ft
 pd.set_option('display.max_rows', None)
 pd.set_option('display.width', None)
 
+
 clients = pd.read_csv('data/clients.csv', parse_dates=['joined'])
 loans = pd.read_csv('data/loans.csv', parse_dates=['loan_start', 'loan_end'])
 payments = pd.read_csv('data/payments.csv', parse_dates=['payment_date'])
