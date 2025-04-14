@@ -1,29 +1,41 @@
-#202135835 정지호
+# 202135835 정지호
+import numpy as np
+import matplotlib.pyplot as plt
 import pandas as pd
-import featuretools as ft
+import seaborn as sns
+from sklearn.linear_model import LinearRegression
 
-# set to see all columns
-pd.set_option('display.max_rows', None)
-pd.set_option('display.width', None)
+df = pd.DataFrame(
+    np.array(
+    [[2400, 41200],
+     [2650, 50100],
+     [2350, 52000],
+     [4950, 66000],
+     [3100, 44500],
+     [2500, 37700],
+     [5106, 73500],
+     [3100, 37500],
+     [2900, 56700],
+     [1750, 35600]]
+    ))
+df.columns = ['spends', 'income']
 
+x = df['spends'].values.sum()
+y = df['income'].values.sum()
 
-clients = pd.read_csv('data/clients.csv', parse_dates=['joined'])
-loans = pd.read_csv('data/loans.csv', parse_dates=['loan_start', 'loan_end'])
-payments = pd.read_csv('data/payments.csv', parse_dates=['payment_date'])
+xy = (df['spends'].values * df['income'].values).sum()
 
-# declare empty entityset
-es = ft.EntitySet(id='clients')
+x_squared = sum([x * x for x in df['spends'].values])
+print(x, y, xy, x_squared)
 
-# .entity_from_dataframe,  had been changed
-es = es.add_dataframe(dataframe_name='clients', dataframe=clients, index='client_id', time_index='joined')
-es = es.add_dataframe(dataframe_name='loans', dataframe=loans, logical_types={'repaid': "Categorical"}, index='loan_id')
-es = es.add_dataframe(dataframe_name='payments', dataframe=payments, logical_types={'missed': "Categorical"}, make_index=True, index='payment_id')
+n = len(df)
+m = ((n * xy) - (x * y)) / ((n * x_squared) - (x * x))
+b = (y - (m * x)) / n
+print(n, m, b)
+print( m * 3500 + b, '\n', m * 5300 + b)
 
-stats = loans.groupby('client_id')['loan_amount'].agg(['sum'])
-stats.columns = ['total_loan_amount']
-
-# Merge with the clients dataframe
-stats_add_total = clients.merge(stats, left_on='client_id', right_index=True, how='left')
-
-print(stats.head(10))
-print(stats_add_total.head(10))
+sns.regplot(x=df['spends'].values, y=(m * df['spends'].values) + b, line_kws={'color': 'red'},
+            scatter_kws={'color': 'r', 's': 0.1})
+sns.scatterplot(x=df['spends'].values, y=df['income'].values, color = 'blue')
+plt.grid(True)
+plt.show()
