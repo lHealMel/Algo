@@ -55,7 +55,7 @@ bins = [0, 18.5, 24.9, 29.9, bmi.max() + 1]
 bmi_labels = ['Underweight', 'Normal', 'Overweight', 'Obese']
 colors = ['blue', 'green', 'orange', 'red']
 bmi_categories = np.digitize(bmi, bins)
-
+print(bmi_categories)
 # subplot 구성
 plt.figure(figsize=(14, 10))
 
@@ -80,10 +80,12 @@ plt.subplot(2, 2, 3)
 plt.pie(freq, labels=bmi_labels, autopct='%.2f%%', colors=colors)
 plt.title("BMI Pie Chart")
 
+
+points = np.column_stack((ht, wt))
 # 4. Scatter Plot
 plt.subplot(2, 2, 4)
 for i in range(1, len(bmi_labels) + 1):
-    cluster_points = np.column_stack((ht, wt))[bmi_categories == i]
+    cluster_points = points[bmi_categories == i]
     plt.scatter(cluster_points[:, 0], cluster_points[:, 1],
                 color=colors[i - 1], label=bmi_labels[i - 1],
                 edgecolor='black', alpha=0.7)
