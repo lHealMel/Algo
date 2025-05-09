@@ -35,6 +35,7 @@ print('\nfillna mean\n', df['A'].fillna(df['A'].mean()))
 print('\nfillna median\n', df['B'].fillna(df['B'].median()))
 
 #  ffill, bfill
-print('\nffill\n', df.ffill())
-print('\nbfill\n', df.bfill())
+print('\ndf\n', df)
+print('\nffill\n', df.ffill(axis=1))
+print('\nbfill\n', df.bfill(axis=1))
 

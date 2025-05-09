@@ -15,7 +15,6 @@ def bmi_sh(df):
         ax[0][i].set_xlabel("Height (Inches)")
         ax[0][i].set_ylabel("Frequency")
 
-    # 몸무게(Weight) 히스토그램 그리기
     for i, bmi in enumerate(bmi_val):
         subset = df[df["BMI"] == bmi]
         ax[1][i].hist(subset["Weight (Pounds)"], bins=10)
@@ -82,7 +81,7 @@ def missing_values(df):
     df.loc[(df['Weight (Pounds)'] > 500) | (df['Weight (Pounds)'] <= 0), 'Weight (Pounds)'] = np.nan
 
     print(df.isna().sum())  # Print sum of rows with NAN, and sum of NAN for each column
-    print(df[df.isna().any(axis=1)])
+    print(df[df.isna().any(axis=0)])
     df_no_nan = df.dropna()  # Extract all rows without NAN, df_no_nan is dropped nan values from df.
 
     df.iloc[:, 1:5] = df.iloc[:, 1:5].fillna(df.iloc[:, 1:5].median())  # nan values replaced to median value.
@@ -147,8 +146,8 @@ def linear_treat(df):
 def main():
     df = pd.read_csv("data/bmi_data_lab3.csv")
     # exploration(df)
-    # missing_values(df)
-    linear_treat(df)
+    missing_values(df)
+    #linear_treat(df)
 
 
 if __name__ == '__main__':

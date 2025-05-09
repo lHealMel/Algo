@@ -1,12 +1,7 @@
 import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+import seaborn as sns
 
-x = [1, 2, 3, 4]
-y1 = [2, 3, 4, 5]
-y2 = [1, 4, 2, 5]
-
-plt.plot(x, y1, label="linear")
-plt.plot(x, y2, label="nonlinear")
-
-plt.legend()
-plt.title("linear vs nonlinear")
-plt.show()
+df = pd.DataFrame([[-1, 0, 1],[-1, 0, 1]])
+print(df.dot(df.T))
