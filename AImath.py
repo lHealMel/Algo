@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
 import sklearn.datasets as dt
 from sklearn.model_selection import train_test_split
@@ -23,7 +22,6 @@ def grad_mse(w, xy):
 # Input argument is weight and a tuple (train_data, target)
 def mse(w, xy):
     (x, y) = xy
-
     # Compute output
     # keep in mind that we're using mse and not mse/m
     # because it would be relevant to the end result
@@ -34,39 +32,43 @@ def mse(w, xy):
 
 
 # (xy) is the (training_set,target) pair
+# if momentum is 0, 1 < batch_size < rows: Mini-Batch SGD(without momentum),
+# if momentum is 0, batch_size = 1: SGD
 def batch_stochastic_gradient_descent(max_epochs, threshold, w_init,
                                       obj_func, grad_func, xy, batch_size,
-                                      learning_rate=0.05, momentum=0.8):
+                                      learning_rate, momentum):
     (x_train, y_train) = xy
     w = w_init
     w_history = w
     f_history = obj_func(w, xy)
     delta_w = np.zeros(w.shape)
     i = 0
-    batch_rows = 0
     diff = 1.0e10
     rows = x_train.shape[0]
-    mse = 0
 
-    # if batch size == 10, data == 1000, learn with 100 datas and update with mean of that mse, with 1 epoch, 10 batch comesout.
+    # if batch size == 10, data == 1000, learn with 10 datas and update with mean of that mse; For 1 epoch, 100 batches come out with 10 data.
     # Run epochs
     while i < max_epochs and diff > threshold:
-        for k in range(batch_size):
-            j = rows // batch_size
-            if (k + 1) * j > rows:
-                x_batch_train = x_train[k * j:, :]
-                y_batch_train = y_train[k * j:]
-            else:
-                x_batch_train = x_train[(k) * j:((k + 1) * j), :]
-                y_batch_train = y_train[(k) * j:((k + 1) * j)]
+        # Shuffle the datas
+        permutation = np.random.permutation(rows)
+        x_train_shuffled = x_train[permutation]
+        y_train_shuffled = y_train[permutation]
 
-            for x, y in zip(x_batch_train, y_batch_train):
-                mse += grad_func(w, (np.array([x]), y))
+        # calculate the number of batches, number of iterations
+        batch_num = (rows + batch_size - 1) // batch_size
+        for k in range(batch_num):
+            start = k * batch_size
+            end = min(start + batch_size, rows)
 
-            mse_mu = mse / x_batch_train.shape[0]
-            delta_w = -learning_rate * mse_mu + momentum * delta_w
+            x_batch = x_train_shuffled[start:end, :]
+            y_batch = y_train_shuffled[start:end]
+
+            # grad_mse returns sum of mse
+            mse_sum = grad_func(w, (x_batch, y_batch))
+            mse_avg = mse_sum / x_batch.shape[0]
+
+            delta_w = -learning_rate * mse_avg + momentum * delta_w
             w = w + delta_w
-            mse = 0
 
         i += 1
 
@@ -76,39 +78,43 @@ def batch_stochastic_gradient_descent(max_epochs, threshold, w_init,
 
     return w_history, f_history
 
-
-def NAG(max_epochs, threshold, w_init, obj_func, grad_func, xy, batch_size, learning_rate=0.05, momentum=0.8):
+# NAG optimizer; implemented from 'batch_stochastic_gradient_descent' function.
+def NAG(max_epochs, threshold, w_init, obj_func, grad_func, xy, batch_size, learning_rate, momentum):
     (x_train, y_train) = xy
     w = w_init
     w_history = w
     f_history = obj_func(w, xy)
     delta_w = np.zeros(w.shape)
     i = 0
-    batch_rows = 0
     diff = 1.0e10
     rows = x_train.shape[0]
-    mse = 0
 
-    # if batch size == 10, data == 1000, learn with 100 datas and update with mean of that mse, with 1 epoch, 10 batch comesout.
+    # if batch size == 10, data == 1000, learn with 10 datas and update with mean of that mse; For 1 epoch, 100 batches come out with 10 data.
     # Run epochs
     while i < max_epochs and diff > threshold:
-        for k in range(batch_size):
-            j = rows // batch_size
-            if (k + 1) * j > rows:
-                x_batch_train = x_train[k * j:, :]
-                y_batch_train = y_train[k * j:]
-            else:
-                x_batch_train = x_train[(k) * j:((k + 1) * j), :]
-                y_batch_train = y_train[(k) * j:((k + 1) * j)]
+        # Shuffle the datas
+        permutation = np.random.permutation(rows)
+        x_train_shuffled = x_train[permutation]
+        y_train_shuffled = y_train[permutation]
 
-            for x, y in zip(x_batch_train, y_batch_train):
-                mse += grad_func(w, (np.array([x]), y))
+        # calculate the number of batches; number of iterations
+        batch_num = (rows + batch_size - 1) // batch_size
+        for k in range(batch_num):
+            start = k * batch_size
+            end = min(start + batch_size, rows)
 
-            mse_mu = mse + (momentum * delta_w) / x_batch_train.shape[0]
-            delta_w = -learning_rate * mse_mu + momentum * delta_w
-            w = w + delta_w
-            mse = 0
+            x_batch = x_train_shuffled[start:end, :]
+            y_batch = y_train_shuffled[start:end]
 
+            # pred = w_t + mu * m_{t-1}
+            pred = w + momentum * delta_w
+
+            # grad_mse returns sum of mse
+            mse_sum = grad_func(pred, (x_batch, y_batch))
+            mse_avg = mse_sum / x_batch.shape[0]
+
+            delta_w = -learning_rate * mse_avg + momentum * delta_w  # m_t
+            w = w + delta_w  # w_{t+1}
         i += 1
 
         w_history = np.vstack((w_history, w))
@@ -116,13 +122,28 @@ def NAG(max_epochs, threshold, w_init, obj_func, grad_func, xy, batch_size, lear
         diff = np.absolute(f_history[-1] - f_history[-2])
 
     return w_history, f_history
+
+
+# Returns error rate of classifier
+# total misclassifications/total*100
+def error(w, xy):
+    (x, y) = xy
+
+    o = np.sum(x * w, axis=1)
+
+    # map the output values to 0/1 class labels
+    ind_1 = np.where(o > 0.5)
+    ind_0 = np.where(o <= 0.5)
+    o[ind_1] = 1
+    o[ind_0] = 0
+    return np.sum((o - y) * (o - y)) / y.size * 100
 
 
 if __name__ == "__main__":
-    # Load the digits dataset with two classes
+    # Load the digit dataset with two classes
     digits, target = dt.load_digits(n_class=2, return_X_y=True)
 
-    # Split into train and test set
+    # Split into train and a test set
     x_train, x_test, y_train, y_test = train_test_split(
         digits, target, test_size=0.2, random_state=10)
 
@@ -132,47 +153,90 @@ if __name__ == "__main__":
 
     rand = np.random.RandomState(19)
     w_init = rand.uniform(-1, 1, x_train.shape[1]) * .000001
-    batch_size1 = 288
-    batch_size2 = 100
-    batch_size3 = 50
-    w_history_stoch1, mse_history_stoch1 = batch_stochastic_gradient_descent(
-        100, 0.1, w_init,
-        mse, grad_mse, (x_train, y_train), batch_size=batch_size1,
-        learning_rate=1e-6, momentum=0.7)
-    w_history_stoch2, mse_history_stoch2 = batch_stochastic_gradient_descent(
-        100, 0.1, w_init,
-        mse, grad_mse, (x_train, y_train), batch_size=batch_size2,
-        learning_rate=1e-6, momentum=0.7)
-    w_history_stoch3, mse_history_stoch3 = batch_stochastic_gradient_descent(
-        100, 0.1, w_init,
-        mse, grad_mse, (x_train, y_train), batch_size=batch_size3,
-        learning_rate=1e-6, momentum=0.7)
 
-    w_history_NAG1, mse_history_NAG1 = NAG(
-        100, 0.1, w_init,
-        mse, grad_mse, (x_train, y_train), batch_size=batch_size1,
-        learning_rate=1e-6, momentum=0.9)
+    # calculate the number of batches in mini-batch SGD without momentum
+    batch_size = [288, 100, 50, 10, 5, 1]
+    w_history_stoch = []
+    mse_history_stoch = []
 
-    fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(20, 15))
-    # Plot the MSE
-    ax[0][0].plot(np.arange(mse_history_stoch1.size), mse_history_stoch1)
-    ax[0][0].set_xlabel('Iteration No.')
-    ax[0][0].set_ylabel('Mean Square Error')
-    ax[0][0].set_title(f'Gradient Descent on Digits Data (BatchSGD with Batch size ={batch_size1})')
+    for i, size in enumerate(batch_size):
+        w_hist, mse_hist = batch_stochastic_gradient_descent(
+            100, 0.1, w_init,
+            mse, grad_mse, (x_train, y_train), batch_size=size,
+            learning_rate=1e-6, momentum=0)
+        w_history_stoch.append(w_hist)
+        mse_history_stoch.append(mse_hist)
 
-    ax[0][1].plot(np.arange(mse_history_stoch2.size), mse_history_stoch2)
-    ax[0][1].set_xlabel('Iteration No.')
-    ax[0][1].set_ylabel('Mean Square Error')
-    ax[0][1].set_title(f'Gradient Descent on Digits Data (BatchSGD with Batch size ={batch_size2})')
+    # calculate with different momentums in NAG, Mini-batch SGD with momentum, with batchsize = 1
+    w_history_NAG = []
+    mse_history_NAG = []
+    w_history_batch_momentum = []
+    mse_history_batch_momentum = []
+    momentum = np.arange(0.0, 1.1, 0.1)
 
-    ax[0][2].plot(np.arange(mse_history_stoch3.size), mse_history_stoch3)
-    ax[0][2].set_xlabel('Iteration No.')
-    ax[0][2].set_ylabel('Mean Square Error')
-    ax[0][2].set_title(f'Gradient Descent on Digits Data (BatchSGD with Batch size ={batch_size3})')
+    for i, m in enumerate(momentum):
+        w_hist, mse_hist = NAG(
+            100, 0.1, w_init,
+            mse, grad_mse, (x_train, y_train), batch_size=batch_size[5],
+            learning_rate=1e-6, momentum=m)
+        w_history_NAG.append(w_hist)
+        mse_history_NAG.append(mse_hist)
 
-    ax[1][0].plot(np.arange(mse_history_NAG1.size), mse_history_NAG1)
-    ax[1][0].set_xlabel('Iteration No.')
-    ax[1][0].set_ylabel('Mean Square Error')
-    ax[1][0].set_title(f'NAG on Digits Data (BatchSGD with Batch size ={batch_size1})')
+    for i, m in enumerate(momentum):
+        w_hist, mse_hist = batch_stochastic_gradient_descent(
+            100, 0.1, w_init,
+            mse, grad_mse, (x_train, y_train), batch_size=batch_size[5],
+            learning_rate=1e-6, momentum=m)
+        w_history_batch_momentum.append(w_hist)
+        mse_history_batch_momentum.append(mse_hist)
 
+    # Plot the MSE with different batch sizes at Mini-batch SGD without momentum
+    idx = 0
+    fig, ax = plt.subplots(nrows=3, ncols=2, figsize=(15, 10))
+    for i in range(3):
+        for j in range(2):
+            ax[i][j].plot(np.arange(mse_history_stoch[idx].size), mse_history_stoch[idx])
+            ax[i][j].set_xlabel('Iteration No.')
+            ax[i][j].set_ylabel('Mean Square Error')
+            ax[i][j].set_title(f'BatchSGD with Batch size ={batch_size[idx]}')
+            idx += 1
+    plt.tight_layout()
     plt.show()
+
+    # Plot the MSE with different batch sizes at Mini-batch SGD without momentum, batchsize = 1
+    idx = 0
+    fig, ax = plt.subplots(nrows=3, ncols=4, figsize=(15, 25))
+    for i in range(3):
+        for j in range(4):
+            if idx < 11:
+                ax[i][j].plot(np.arange(mse_history_NAG[idx].size), mse_history_NAG[idx], label='NAG')
+                ax[i][j].plot(np.arange(mse_history_batch_momentum[idx].size), mse_history_batch_momentum[idx],
+                              label='SGD')
+                ax[i][j].legend(loc='upper right')
+
+                ax[i][j].set_xlabel('Iteration No.')
+                ax[i][j].set_ylabel('Mean Square Error')
+                ax[i][j].set_title(f'NAG and SGD with m ={momentum[idx]:.1f} (bs=1)')
+
+                train_error_NAG = error(w_history_NAG[idx][-1], (x_train, y_train))
+                test_error_NAG = error(w_history_NAG[idx][-1], (x_test, y_test))
+
+                train_error_stochastic = error(w_history_batch_momentum[idx][-1], (x_train, y_train))
+                test_error_stochastic = error(w_history_batch_momentum[idx][-1], (x_test, y_test))
+
+                print(f'Momentum = {momentum[idx]:.1f}')
+                print(f'\tNAG:')
+                print(f'\t\tTrain error: {train_error_NAG:.2f}')
+                print(f'\t\tTest error: {test_error_NAG:.2f}')
+                print(f'\tStochastic:')
+                print(f'\t\tTrain error: {train_error_stochastic:.2f}')
+                print(f'\t\tTest error: {test_error_stochastic:.2f}')
+                idx += 1
+            else:
+                ax[i][j].axis('off')
+
+    plt.tight_layout()
+    plt.show()
+
+    # with the plots above, we can see the convergence result with SGD with momentum and NAG.
+    # Final errors of SGD and NAG are 0.35, 1.39, but m = 0.9 reach that value fast.
