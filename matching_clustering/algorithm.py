@@ -78,13 +78,13 @@ if __name__ == "__main__":
     print("스케일링 이후 좌표 :\n",mds_coordinates)
     labels = AgglomerativeClustering(
         n_clusters=None,  # Automatically determine the number of clusters
-        distance_threshold=0.7,  # Set similarity threshold (1 - threshold = distance)
+        distance_threshold=0.6,  # Set similarity threshold (1 - threshold = distance)
         linkage="complete"  # Calculate the distances between clusters: complete Linkage
     ).fit_predict(mds_coordinates)
     print_clusters(students, labels)
     print("\n군집화 label:", labels, "\n")
     sc.scatter_clustering(student_names, labels, mds_coordinates)
-    sc.dendrogram_clustering(student_names, distance_matrix)
+    sc.dendrogram_clustering(student_names, mds_coordinates)
     sil_score(labels, mds_coordinates, student_names)
 
 
